@@ -114,8 +114,8 @@ class CameraFragment : Fragment() {
 
     private fun finishAndReturnImageUri(uri: Uri?) {
         setFragmentResult(
-            "requestPhoto",
-            bundleOf("photoUri" to uri.toString())
+            REQUEST_PHOTO,
+            bundleOf(PHOTO_URI to uri.toString())
         )
         findNavController().navigateUp()
     }
@@ -175,6 +175,9 @@ class CameraFragment : Fragment() {
         }
 
     companion object {
+        const val REQUEST_PHOTO = "requestPhoto"
+        const val PHOTO_URI = "photoUri"
+
         private const val TAG = "MosisCaching"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS =

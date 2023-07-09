@@ -1,5 +1,6 @@
 package elfak.mosis.caching.fragments
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,11 +17,14 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.ktx.storage
 import elfak.mosis.caching.R
 import elfak.mosis.caching.data.NewUser
 import elfak.mosis.caching.data.User
 import elfak.mosis.caching.databinding.FragmentRegisterBinding
 import elfak.mosis.caching.model.RegisterViewModel
+import java.util.UUID
 
 class RegisterFragment : Fragment() {
 
@@ -30,16 +34,17 @@ class RegisterFragment : Fragment() {
     private lateinit var database: FirebaseDatabase
     private lateinit var auth: FirebaseAuth
 
+    private var imageUri: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setFragmentResultListener("requestPhoto") { _, bundle ->
-            val result = bundle.getString("photoUri")
-            val msg = "Slika učitana!"
-            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        setFragmentResultListener(CameraFragment.REQUEST_PHOTO) { _, bundle ->
+            val result = bundle.getString(CameraFragment.PHOTO_URI)
             Glide.with(requireContext()).load(result).apply(
                 RequestOptions.circleCropTransform()
             ).into(binding.imageView2)
+            imageUri = result
         }
     }
 
@@ -65,37 +70,72 @@ class RegisterFragment : Fragment() {
     }
 
     private fun onRegisterClicked() {
-        Toast.makeText(
-            requireContext(),
-            viewModel.newUser.value!!.firstName,
-            Toast.LENGTH_SHORT,
-        ).show()
+        val username = binding.editTextText.text.toString()
+        val password1 = binding.editTextTextPassword2.text.toString()
+        val password2 = binding.editTextTextPassword3.text.toString()
+        val firstName = binding.editTextText3.text.toString()
+        val lastName = binding.editTextText4.text.toString()
+        val phoneNumber = binding.editTextPhone.text.toString()
+        val imageUri = imageUri
+
+        if (username.isEmpty() || password1.isEmpty() || password2.isEmpty()
+            || firstName.isEmpty() || lastName.isEmpty() || phoneNumber.isEmpty()
+            || imageUri == null
+        ) {
+            Toast.makeText(
+                requireContext(),
+                "Popunite sva polja",
+                Toast.LENGTH_SHORT,
+            ).show()
+            return
+        }
+        if (password1 != password2) {
+            Toast.makeText(
+                requireContext(),
+                "Lozinke se ne podudaraju",
+                Toast.LENGTH_SHORT,
+            ).show()
+            return
+        }
+        register(NewUser(username, firstName, lastName, phoneNumber, imageUri, password1))
     }
 
     private fun register(newUser: NewUser) {
+        auth.signOut()
         auth.createUserWithEmailAndPassword(newUser.username, newUser.password)
             .addOnCompleteListener(requireActivity()) { task ->
                 if (task.isSuccessful) {
-                    val authUser = auth.currentUser!!
-                    val photoUrl = "/"
-                    val user = User(
-                        authUser.uid,
-                        authUser.email!!,
-                        newUser.firstName,
-                        newUser.lastName,
-                        newUser.phoneNumber,
-                        photoUrl
-                    )
-                    val userRef = database.getReference("users").child(user.uid)
-                    userRef.setValue(user)
+                    val uid = task.result.user?.uid
+                    if (uid != null) {
+                        val fileName = "p-" + UUID.randomUUID() + ".jpg"
+                        val imagePath = "users/$uid/$fileName"
+
+                        val photoRef: StorageReference = Firebase.storage.reference.child(imagePath)
+                        val photoLocalUri = Uri.parse(newUser.localPhotoPath)
+                        photoRef.putFile(photoLocalUri).addOnSuccessListener {
+                            val userRef = database.getReference("users/$uid")
+                            userRef.setValue(
+                                User(
+                                    uid,
+                                    newUser.username,
+                                    newUser.firstName,
+                                    newUser.lastName,
+                                    newUser.phoneNumber,
+                                    imagePath,
+                                    0
+                                )
+                            ).addOnSuccessListener {
+                                findNavController().navigate(R.id.action_registerFragment_to_mapFragment)
+                            }
+                        }
+                    }
                 } else {
                     Toast.makeText(
                         requireContext(),
-                        "Authentication failed.",
+                        "Neuspešna registracija.",
                         Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
     }
-
 }

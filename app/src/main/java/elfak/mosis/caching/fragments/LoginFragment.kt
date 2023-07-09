@@ -24,7 +24,6 @@ class LoginFragment : Fragment() {
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
     private lateinit var storage: FirebaseStorage
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -36,57 +35,48 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        database =
-            Firebase.database("https://mosiscaching-default-rtdb.europe-west1.firebasedatabase.app")
         auth = Firebase.auth
         storage = Firebase.storage
+        database = Firebase.database
+
+        if (auth.currentUser != null) {
+            findNavController().navigate(R.id.action_loginFragment_to_mapFragment)
+        }
 
         binding.button.setOnClickListener {
-            val email = binding.editTextTextEmailAddress.text.toString()
-            val password = binding.editTextTextPassword.text.toString()
+            if (auth.currentUser != null) {
+                findNavController().navigate(R.id.action_loginFragment_to_mapFragment)
+            } else {
+                val email = binding.editTextTextEmailAddress.text.toString()
+                val password = binding.editTextTextPassword.text.toString()
 
-            Firebase.auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(requireActivity()) { task ->
-                    if (task.isSuccessful) {
-                        val user = auth.currentUser
-                        //updateUI(user)
-                        if (user != null) {
-                            Toast.makeText(
-                                requireContext(),
-                                "Authentication successful. ${user.uid}",
-                                Toast.LENGTH_LONG,
-                            ).show()
+                if (email != "" && password != "") {
+                    Firebase.auth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(requireActivity()) { task ->
+                            if (task.isSuccessful) {
+                                val user = auth.currentUser
+                                //updateUI(user)
+                                if (user != null) {
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "Authentication successful. ${user.uid}",
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                }
+                            } else {
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Authentication failed.",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Authentication failed.",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                    }
                 }
+            }
         }
 
         binding.textView.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
         }
     }
-
-    override fun onStart() {
-        super.onStart()
-        // Check if user is signed in (non-null) and update UI accordingly.
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            if (auth.uid != null) {
-
-            }
-
-            Toast.makeText(
-                requireContext(),
-                "Current user: ${currentUser.displayName}",
-                Toast.LENGTH_LONG,
-            ).show()
-        }
-    }
-
 }
