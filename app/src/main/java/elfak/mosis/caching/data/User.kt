@@ -11,4 +11,13 @@ data class User(
     var phoneNumber: String,
     var photoPath: String,
     var score: Int
-)
+) : Comparable<User> {
+
+    constructor() : this("", "", "", "", "", "", 0) {
+
+    }
+
+    override fun compareTo(other: User): Int {
+        return this.score.compareTo(other.score)
+    }
+}
