@@ -8,18 +8,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import elfak.mosis.caching.R
 
-class CacheFragment : Fragment() {
-
+class CreateCacheFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_cache, container, false)
+        return inflater.inflate(R.layout.fragment_create_cache, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        (requireActivity() as AppCompatActivity).supportActionBar?.title = "Pregled keša"
+        (requireActivity() as AppCompatActivity).supportActionBar?.title = "Novi keš"
     }
 }

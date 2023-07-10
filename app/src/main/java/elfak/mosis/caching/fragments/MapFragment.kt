@@ -2,26 +2,37 @@ package elfak.mosis.caching.fragments
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Dialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
 import com.firebase.geofire.GeoQueryEventListener
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import elfak.mosis.caching.R
 import elfak.mosis.caching.databinding.FragmentMapBinding
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
@@ -49,8 +60,16 @@ class MapFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupMenu()
+        (requireActivity() as AppCompatActivity).supportActionBar?.title = "Mapa"
+
+        binding.fabCreateCache.setOnClickListener {
+            findNavController().navigate(R.id.action_mapFragment_to_createCacheFragment)
+        }
+
         val ctx = requireContext()
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
+
         val map = binding.map
         map.setMultiTouchControls(true)
         map.controller.setZoom(15.0)
@@ -171,4 +190,63 @@ class MapFragment : Fragment() {
                 ).show()
             }
         }
+
+    private fun setupMenu() {
+        (requireActivity() as MenuHost).addMenuProvider(object : MenuProvider {
+            override fun onPrepareMenu(menu: Menu) {
+                val item = menu.findItem(R.id.action_show_map)
+                item.isVisible = false
+            }
+
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.menu_main, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.action_show_list -> {
+                        findNavController().navigate(R.id.action_mapFragment_to_cacheListFragment)
+                        true
+                    }
+
+                    R.id.action_show_leaderboard -> {
+                        findNavController().navigate(R.id.action_mapFragment_to_leaderboardFragment)
+                        true
+                    }
+
+                    R.id.action_show_filter -> {
+                        showFilter()
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+    }
+
+    private fun showFilter() {
+        val dialog = Dialog(requireContext())
+        dialog.setContentView(R.layout.dialog_filter)
+        dialog.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog.setCancelable(true)
+        dialog.show()
+    }
+
+    private fun showDatePicker() {
+        val dateRangePicker =
+            MaterialDatePicker.Builder.dateRangePicker()
+                .setTitleText("Kreirano")
+                .setSelection(
+                    androidx.core.util.Pair(
+                        MaterialDatePicker.thisMonthInUtcMilliseconds(),
+                        MaterialDatePicker.todayInUtcMilliseconds()
+                    )
+                )
+                .build()
+        dateRangePicker.show(parentFragmentManager, "tag")
+    }
 }

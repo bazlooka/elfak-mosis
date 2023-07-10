@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.auth.FirebaseAuth
@@ -35,17 +36,19 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        (requireActivity() as AppCompatActivity).supportActionBar?.title = "Prijavljivanje"
+
         auth = Firebase.auth
         storage = Firebase.storage
         database = Firebase.database
 
         if (auth.currentUser != null) {
-            findNavController().navigate(R.id.action_loginFragment_to_mapFragment)
+            goToMap()
         }
 
         binding.button.setOnClickListener {
             if (auth.currentUser != null) {
-                findNavController().navigate(R.id.action_loginFragment_to_mapFragment)
+                goToMap()
             } else {
                 val email = binding.editTextTextEmailAddress.text.toString()
                 val password = binding.editTextTextPassword.text.toString()
@@ -55,13 +58,8 @@ class LoginFragment : Fragment() {
                         .addOnCompleteListener(requireActivity()) { task ->
                             if (task.isSuccessful) {
                                 val user = auth.currentUser
-                                //updateUI(user)
                                 if (user != null) {
-                                    Toast.makeText(
-                                        requireContext(),
-                                        "Authentication successful. ${user.uid}",
-                                        Toast.LENGTH_LONG,
-                                    ).show()
+                                    goToMap()
                                 }
                             } else {
                                 Toast.makeText(
@@ -76,7 +74,15 @@ class LoginFragment : Fragment() {
         }
 
         binding.textView.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
+            goToRegister()
         }
+    }
+
+    private fun goToMap() {
+        findNavController().navigate(R.id.action_loginFragment_to_mapFragment)
+    }
+
+    private fun goToRegister() {
+        findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
     }
 }
