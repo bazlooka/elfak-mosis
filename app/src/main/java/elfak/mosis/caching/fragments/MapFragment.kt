@@ -93,6 +93,7 @@ class MapFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         binding.map.onPause()
+        geoQuery.removeAllListeners()
     }
 
     @SuppressLint("MissingPermission")
