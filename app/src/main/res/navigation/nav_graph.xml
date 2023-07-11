@@ -122,7 +122,11 @@
         android:id="@+id/cacheFragment"
         android:name="elfak.mosis.caching.fragments.CacheFragment"
         android:label="fragment_cache"
-        tools:layout="@layout/fragment_cache" />
+        tools:layout="@layout/fragment_cache">
+        <argument
+            android:name="cacheId"
+            app:argType="string" />
+    </fragment>
     <fragment
         android:id="@+id/leaderboardFragment"
         android:name="elfak.mosis.caching.fragments.LeaderboardFragment"

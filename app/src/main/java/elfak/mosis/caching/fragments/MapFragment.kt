@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
@@ -17,11 +18,14 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.ActivityCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import com.firebase.geofire.GeoFire
@@ -31,8 +35,10 @@ import com.firebase.geofire.GeoQueryEventListener
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import elfak.mosis.caching.R
+import elfak.mosis.caching.data.CacheType
 import elfak.mosis.caching.databinding.FragmentMapBinding
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
@@ -47,7 +53,11 @@ class MapFragment : Fragment() {
     private lateinit var binding: FragmentMapBinding
 
     private lateinit var locationManager: LocationManager
-    private lateinit var geoQuery: GeoQuery
+    private var geoQuery: GeoQuery? = null
+
+    private lateinit var pinEasy: Drawable
+    private lateinit var pinMedium: Drawable
+    private lateinit var pinHard: Drawable
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -66,6 +76,10 @@ class MapFragment : Fragment() {
         binding.fabCreateCache.setOnClickListener {
             findNavController().navigate(R.id.action_mapFragment_to_createCacheFragment)
         }
+
+        pinEasy = AppCompatResources.getDrawable(requireContext(), R.drawable.pin_easy)!!
+        pinMedium = AppCompatResources.getDrawable(requireContext(), R.drawable.pin_medium)!!
+        pinHard = AppCompatResources.getDrawable(requireContext(), R.drawable.pin_hard)!!
 
         val ctx = requireContext()
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
@@ -93,7 +107,7 @@ class MapFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         binding.map.onPause()
-        geoQuery.removeAllListeners()
+        geoQuery?.removeAllListeners()
     }
 
     @SuppressLint("MissingPermission")
@@ -122,7 +136,7 @@ class MapFragment : Fragment() {
                 GeoLocation(currLocation.latitude, currLocation.longitude),
                 1000000.0
             )
-            geoQuery.addGeoQueryEventListener(geoQueryEventListener)
+            geoQuery?.addGeoQueryEventListener(geoQueryEventListener)
         }
     }
 
@@ -130,11 +144,30 @@ class MapFragment : Fragment() {
         private var markers: HashMap<String, Marker> = HashMap()
 
         override fun onKeyEntered(key: String, location: GeoLocation) {
-            val cacheMarker = Marker(binding.map)
-            cacheMarker.position = GeoPoint(location.latitude, location.longitude)
-            cacheMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            binding.map.overlays.add(cacheMarker)
-            markers[key] = cacheMarker
+            Firebase.firestore.document("caches/$key")
+                .get()
+                .addOnSuccessListener {
+                    val type = it.getString("type")
+                    if (type != null) {
+                        val cacheMarker = Marker(binding.map)
+                        cacheMarker.position = GeoPoint(location.latitude, location.longitude)
+                        cacheMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        binding.map.overlays.add(cacheMarker)
+                        markers[key] = cacheMarker
+                        cacheMarker.id = key
+                        cacheMarker.icon = when (CacheType.valueOf(type)) {
+                            CacheType.EASY -> pinEasy
+                            CacheType.MEDIUM -> pinMedium
+                            CacheType.HARD -> pinHard
+                        }
+                        cacheMarker.setOnMarkerClickListener { marker, map ->
+                            val bundle = bundleOf("cacheId" to marker.id)
+                            map.findNavController()
+                                .navigate(R.id.action_mapFragment_to_cacheFragment, bundle)
+                            return@setOnMarkerClickListener true
+                        }
+                    }
+                }
         }
 
         override fun onKeyExited(key: String?) {
@@ -154,7 +187,7 @@ class MapFragment : Fragment() {
     }
 
     private val locationListener: LocationListener = LocationListener {
-        geoQuery.center = GeoLocation(it.latitude, it.longitude)
+        geoQuery?.center = GeoLocation(it.latitude, it.longitude)
     }
 
     private fun setMyLocationOverlay() {

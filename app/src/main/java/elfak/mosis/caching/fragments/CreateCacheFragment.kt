@@ -18,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
@@ -27,7 +28,6 @@ import elfak.mosis.caching.R
 import elfak.mosis.caching.data.Cache
 import elfak.mosis.caching.data.CacheType
 import elfak.mosis.caching.databinding.FragmentCreateCacheBinding
-import java.time.LocalDateTime
 
 class CreateCacheFragment : Fragment() {
 
@@ -123,7 +123,7 @@ class CreateCacheFragment : Fragment() {
             }
         }
         val desc = binding.editTextTextMultiLine.text.toString()
-        val currTime = LocalDateTime.now()
+        val currTime = Timestamp.now()
 
         val cache = Cache(
             cacheType,
