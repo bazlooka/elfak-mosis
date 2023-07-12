@@ -165,6 +165,7 @@ class MapFragment : Fragment() {
                 .addOnSuccessListener {
                     val cache = it.toObject(Cache::class.java)
                     if (cache != null) {
+                        caches[key] = cache
                         val f = filterViewModel.filter.value
                         if (f != null && !FilterService.filterCache(f, cache)) {
                             return@addOnSuccessListener
@@ -195,6 +196,7 @@ class MapFragment : Fragment() {
         override fun onKeyExited(key: String?) {
             binding.map.overlays.remove(markers[key])
             markers.remove(key)
+            caches.remove(key)
         }
 
         override fun onKeyMoved(key: String, location: GeoLocation) {

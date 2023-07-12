@@ -1,8 +1,10 @@
 package elfak.mosis.caching.fragments
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
@@ -17,22 +19,56 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.firebase.geofire.GeoFire
+import com.firebase.geofire.GeoLocation
+import com.firebase.geofire.GeoQuery
+import com.firebase.geofire.GeoQueryEventListener
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import elfak.mosis.caching.R
+import elfak.mosis.caching.adapters.CachesRecyclerAdapter
+import elfak.mosis.caching.data.Cache
+import elfak.mosis.caching.data.CacheWithId
+import elfak.mosis.caching.databinding.FragmentCacheListBinding
+import elfak.mosis.caching.model.FilterViewModel
+import elfak.mosis.caching.services.FilterService
+import org.osmdroid.views.overlay.Marker
 
 class CacheListFragment : Fragment() {
+
+    private lateinit var binding: FragmentCacheListBinding
+
+    private lateinit var locationManager: LocationManager
+    private var geoQuery: GeoQuery? = null
+
+    private val filterViewModel: FilterViewModel by viewModels()
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var recyclerAdapter: CachesRecyclerAdapter
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_cache_list, container, false)
+    ): View {
+        binding = FragmentCacheListBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupMenu()
         (requireActivity() as AppCompatActivity).supportActionBar?.title = "Lista keševa"
+        recyclerView = view.findViewById(R.id.rvCacheList)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerAdapter = CachesRecyclerAdapter(ArrayList(10), requireContext())
+        recyclerView.adapter = recyclerAdapter
         setupLocation()
     }
 
@@ -68,7 +104,7 @@ class CacheListFragment : Fragment() {
     private fun setupLocation() {
         val locationManager = requireActivity()
             .getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
+        this.locationManager = locationManager
         if (ActivityCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -85,10 +121,73 @@ class CacheListFragment : Fragment() {
             0f,
             locationListener
         )
+
+        val cachesRef = Firebase.database.getReference("cacheLocations")
+        val geoFire = GeoFire(cachesRef)
+        val currLocation = locationManager.getLastKnownLocation(LocationManager.FUSED_PROVIDER)
+
+        if (currLocation != null) {
+            geoQuery = geoFire.queryAtLocation(
+                GeoLocation(currLocation.latitude, currLocation.longitude),
+                1000000.0
+            )
+            geoQuery?.addGeoQueryEventListener(geoQueryEventListener)
+        }
     }
 
     private val locationListener: LocationListener = LocationListener {
-        //geoQuery?.center = GeoLocation(it.latitude, it.longitude)
+        geoQuery?.center = GeoLocation(it.latitude, it.longitude)
     }
 
+    private var markers: HashMap<String, Marker> = HashMap()
+    private var caches: HashMap<String, Cache> = HashMap()
+
+    private val geoQueryEventListener: GeoQueryEventListener = object : GeoQueryEventListener {
+        @SuppressLint("MissingPermission")
+        override fun onKeyEntered(key: String, location: GeoLocation) {
+            Firebase.firestore.document("caches/$key")
+                .get()
+                .addOnSuccessListener {
+                    val cache = it.toObject(Cache::class.java)
+                    if (cache != null) {
+                        caches[key] = cache
+                        val f = filterViewModel.filter.value
+                        if (f != null && !FilterService.filterCache(f, cache)) {
+                            return@addOnSuccessListener
+                        }
+                        val loc = Location("listLoc")
+                        loc.longitude = location.longitude
+                        loc.latitude = location.latitude
+                        val distance = locationManager
+                            .getLastKnownLocation(LocationManager.FUSED_PROVIDER)
+                            ?.distanceTo(loc)
+
+                        recyclerAdapter.add(CacheWithId(cache, key, distance!!))
+                    }
+                }
+        }
+
+        override fun onKeyExited(key: String?) {
+            if (key != null) {
+                recyclerAdapter.remove(key)
+                markers.remove(key)
+                caches.remove(key)
+            }
+        }
+
+        override fun onKeyMoved(key: String, location: GeoLocation) {
+
+        }
+
+        override fun onGeoQueryReady() {
+        }
+
+        override fun onGeoQueryError(error: DatabaseError?) {
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        geoQuery?.removeGeoQueryEventListener(geoQueryEventListener)
+    }
 }
