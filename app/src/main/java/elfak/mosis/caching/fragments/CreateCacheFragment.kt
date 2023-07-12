@@ -18,7 +18,6 @@ import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.database.ktx.getValue
@@ -124,7 +123,7 @@ class CreateCacheFragment : Fragment() {
             }
         }
         val desc = binding.editTextTextMultiLine.text.toString()
-        val currTime = Timestamp.now()
+        val currTime = System.currentTimeMillis()
 
         val cache = Cache(
             cacheType,

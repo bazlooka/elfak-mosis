@@ -44,10 +44,12 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import elfak.mosis.caching.R
+import elfak.mosis.caching.data.Cache
 import elfak.mosis.caching.data.CacheType
 import elfak.mosis.caching.data.Filter
 import elfak.mosis.caching.databinding.FragmentMapBinding
 import elfak.mosis.caching.model.FilterViewModel
+import elfak.mosis.caching.services.FilterService
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
@@ -120,7 +122,7 @@ class MapFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         binding.map.onPause()
-        geoQuery?.removeAllListeners()
+        geoQuery?.removeGeoQueryEventListener(geoQueryEventListener)
     }
 
     @SuppressLint("MissingPermission")
@@ -129,14 +131,14 @@ class MapFragment : Fragment() {
             requireActivity().getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         locationManager.requestLocationUpdates(
-            LocationManager.GPS_PROVIDER,
+            LocationManager.FUSED_PROVIDER,
             0L,
             0f,
             locationListener
         )
         val cachesRef = Firebase.database.getReference("cacheLocations")
         val geoFire = GeoFire(cachesRef)
-        val currLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+        val currLocation = locationManager.getLastKnownLocation(LocationManager.FUSED_PROVIDER)
 
         if (currLocation != null) {
             binding.map.controller.setCenter(
@@ -153,22 +155,28 @@ class MapFragment : Fragment() {
         }
     }
 
-    private val geoQueryEventListener: GeoQueryEventListener = object : GeoQueryEventListener {
-        private var markers: HashMap<String, Marker> = HashMap()
+    private var markers: HashMap<String, Marker> = HashMap()
+    private var caches: HashMap<String, Cache> = HashMap()
 
+    private val geoQueryEventListener: GeoQueryEventListener = object : GeoQueryEventListener {
         override fun onKeyEntered(key: String, location: GeoLocation) {
             Firebase.firestore.document("caches/$key")
                 .get()
                 .addOnSuccessListener {
-                    val type = it.getString("type")
-                    if (type != null) {
+                    val cache = it.toObject(Cache::class.java)
+                    if (cache != null) {
+                        val f = filterViewModel.filter.value
+                        if (f != null && !FilterService.filterCache(f, cache)) {
+                            return@addOnSuccessListener
+                        }
                         val cacheMarker = Marker(binding.map)
                         cacheMarker.position = GeoPoint(location.latitude, location.longitude)
                         cacheMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         binding.map.overlays.add(cacheMarker)
                         markers[key] = cacheMarker
+                        caches[key] = cache
                         cacheMarker.id = key
-                        cacheMarker.icon = when (CacheType.valueOf(type)) {
+                        cacheMarker.icon = when (cache.type) {
                             CacheType.EASY -> pinEasy
                             CacheType.MEDIUM -> pinMedium
                             CacheType.HARD -> pinHard
@@ -179,6 +187,7 @@ class MapFragment : Fragment() {
                                 .navigate(R.id.action_mapFragment_to_cacheFragment, bundle)
                             return@setOnMarkerClickListener true
                         }
+
                     }
                 }
         }
@@ -290,7 +299,6 @@ class MapFragment : Fragment() {
         val cbFilterMedium = dialog.findViewById<CheckBox>(R.id.cbFilterMedium)
         val cbFilterHard = dialog.findViewById<CheckBox>(R.id.cbFilterHard)
         val etFilterDesc = dialog.findViewById<EditText>(R.id.etFilterDesc)
-        val etFilterAuthor = dialog.findViewById<EditText>(R.id.etFilterAuthor)
         val btnFilterDate = dialog.findViewById<Button>(R.id.btnFilterDate)
         val btnApplyFilter = dialog.findViewById<Button>(R.id.btnAppyFilter)
         val tvFilterDate = dialog.findViewById<TextView>(R.id.tvFilterDate)
@@ -320,7 +328,6 @@ class MapFragment : Fragment() {
         cbFilterMedium.isChecked = filter?.selectedTypes?.contains(CacheType.MEDIUM) ?: true
         cbFilterHard.isChecked = filter?.selectedTypes?.contains(CacheType.HARD) ?: true
         etFilterDesc.setText(filter?.desc ?: "")
-        etFilterAuthor.setText(filter?.author ?: "")
         if (filter?.startTime != null && filter.endTime != null) {
             tvFilterDate.text = getDateString(filter.startTime, filter.endTime)
         }
@@ -370,12 +377,14 @@ class MapFragment : Fragment() {
                     newProgress,
                     cacheTypes.toTypedArray(),
                     etFilterDesc.text.toString(),
-                    etFilterAuthor.text.toString(),
                     start,
                     end
                 )
                 filterViewModel.setFilter(newFilter)
-
+                caches.forEach {
+                    (binding.map.overlays.find { o -> o == markers[it.key] })?.isEnabled =
+                        FilterService.filterCache(newFilter, it.value)
+                }
                 dialog.dismiss()
             }
         dialog.show()

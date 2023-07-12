@@ -80,7 +80,7 @@ class CacheListFragment : Fragment() {
             return
         }
         locationManager.requestLocationUpdates(
-            LocationManager.GPS_PROVIDER,
+            LocationManager.FUSED_PROVIDER,
             0L,
             0f,
             locationListener

@@ -7,7 +7,6 @@ data class Filter(
     val radius: Int,
     val selectedTypes: Array<CacheType>,
     val desc: String,
-    val author: String,
     val startTime: Long?,
     val endTime: Long?
 ) {

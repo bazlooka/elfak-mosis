@@ -15,7 +15,6 @@ class FilterViewModel : ViewModel() {
             100,
             arrayOf(CacheType.EASY, CacheType.MEDIUM, CacheType.HARD),
             "",
-            "",
             null,
             null
         )

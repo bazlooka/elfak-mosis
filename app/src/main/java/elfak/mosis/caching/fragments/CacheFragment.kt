@@ -99,7 +99,7 @@ class CacheFragment : Fragment() {
                                 binding.tvCacheAuthor.text =
                                     "${author.firstName} ${author.lastName}"
                                 binding.tvCacheDate.text =
-                                    getDateTimeInstance().format(c.datePublished!!.toDate())
+                                    getDateTimeInstance().format(c.datePublished)
                                 checkLocation()
                                 listenToLog()
                             }
