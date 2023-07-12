@@ -231,6 +231,7 @@ class MapFragment : Fragment() {
         { isGranted ->
             if (isGranted) {
                 setMyLocationOverlay()
+                initLocationTracking()
             } else {
                 Toast.makeText(
                     requireContext(),
