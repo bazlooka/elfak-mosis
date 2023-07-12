@@ -16,6 +16,8 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -52,6 +54,7 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import java.text.DateFormat
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -269,6 +272,7 @@ class MapFragment : Fragment() {
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
+
     private fun showFilter() {
         val dialog = Dialog(requireContext())
         dialog.setContentView(R.layout.dialog_filter)
@@ -278,10 +282,23 @@ class MapFragment : Fragment() {
         )
         dialog.setCancelable(true)
 
-        val label = dialog.findViewById<TextView>(R.id.tvFilterRadius)
+        val filter = filterViewModel.filter.value
 
+        val label = dialog.findViewById<TextView>(R.id.tvFilterRadius)
         val sbRadius = dialog.findViewById<SeekBar>(R.id.sbRadius)
-        val progress = filterViewModel.filter.value?.radius ?: 100
+        val cbFilterEasy = dialog.findViewById<CheckBox>(R.id.cbFilterEasy)
+        val cbFilterMedium = dialog.findViewById<CheckBox>(R.id.cbFilterMedium)
+        val cbFilterHard = dialog.findViewById<CheckBox>(R.id.cbFilterHard)
+        val etFilterDesc = dialog.findViewById<EditText>(R.id.etFilterDesc)
+        val etFilterAuthor = dialog.findViewById<EditText>(R.id.etFilterAuthor)
+        val btnFilterDate = dialog.findViewById<Button>(R.id.btnFilterDate)
+        val btnApplyFilter = dialog.findViewById<Button>(R.id.btnAppyFilter)
+        val tvFilterDate = dialog.findViewById<TextView>(R.id.tvFilterDate)
+
+        var start: Long? = null
+        var end: Long? = null
+
+        val progress = filter?.radius ?: 100
         sbRadius.progress = progress
         label.text = getRadiusString(progress)
         sbRadius.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -299,27 +316,65 @@ class MapFragment : Fragment() {
             }
 
         })
+        cbFilterEasy.isChecked = filter?.selectedTypes?.contains(CacheType.EASY) ?: true
+        cbFilterMedium.isChecked = filter?.selectedTypes?.contains(CacheType.MEDIUM) ?: true
+        cbFilterHard.isChecked = filter?.selectedTypes?.contains(CacheType.HARD) ?: true
+        etFilterDesc.setText(filter?.desc ?: "")
+        etFilterAuthor.setText(filter?.author ?: "")
+        if (filter?.startTime != null && filter.endTime != null) {
+            tvFilterDate.text = getDateString(filter.startTime, filter.endTime)
+        }
 
-        dialog.findViewById<Button>(R.id.btnAppyFilter)
+        btnFilterDate
             .setOnClickListener {
-                val progress = sbRadius.progress
-                val dProgress = progress / 100.0
+                val dateRangePicker =
+                    MaterialDatePicker.Builder.dateRangePicker()
+                        .setTitleText("Kreirano")
+                        .setSelection(
+                            androidx.core.util.Pair(
+                                MaterialDatePicker.thisMonthInUtcMilliseconds(),
+                                MaterialDatePicker.todayInUtcMilliseconds()
+                            )
+                        )
+                        .build()
+                dateRangePicker.addOnPositiveButtonClickListener {
+                    start = it.first
+                    end = it.second
+                    tvFilterDate.text = getDateString(it.first, it.second)
+                }
+                dateRangePicker
+                    .show(parentFragmentManager, "tag")
+            }
+
+        btnApplyFilter
+            .setOnClickListener {
+                val newProgress = sbRadius.progress
+                val dProgress = newProgress / 100.0
                 val radius =
-                    if (progress == 100)
+                    if (newProgress == 100)
                         8587.0
                     else
                         dProgress.pow(5) * 8587.0
                 geoQuery?.radius = radius
 
-                val filter = Filter(
-                    progress,
-                    arrayOf(CacheType.EASY),
-                    "",
-                    "",
-                    0,
-                    0
+                val cacheTypes = arrayListOf<CacheType>()
+
+                if (cbFilterEasy.isChecked)
+                    cacheTypes.add(CacheType.EASY)
+                if (cbFilterMedium.isChecked)
+                    cacheTypes.add(CacheType.MEDIUM)
+                if (cbFilterHard.isChecked)
+                    cacheTypes.add(CacheType.HARD)
+
+                val newFilter = Filter(
+                    newProgress,
+                    cacheTypes.toTypedArray(),
+                    etFilterDesc.text.toString(),
+                    etFilterAuthor.text.toString(),
+                    start,
+                    end
                 )
-                filterViewModel.setFilter(filter)
+                filterViewModel.setFilter(newFilter)
 
                 dialog.dismiss()
             }
@@ -340,17 +395,13 @@ class MapFragment : Fragment() {
         }
     }
 
-    private fun showDatePicker() {
-        val dateRangePicker =
-            MaterialDatePicker.Builder.dateRangePicker()
-                .setTitleText("Kreirano")
-                .setSelection(
-                    androidx.core.util.Pair(
-                        MaterialDatePicker.thisMonthInUtcMilliseconds(),
-                        MaterialDatePicker.todayInUtcMilliseconds()
-                    )
-                )
-                .build()
-        dateRangePicker.show(parentFragmentManager, "tag")
+    private fun getDateString(start: Long, end: Long): String {
+        val startStr = DateFormat
+            .getDateInstance()
+            .format(java.util.Date(start))
+        val endStr = DateFormat
+            .getDateInstance()
+            .format(java.util.Date(end))
+        return "$startStr - $endStr"
     }
 }

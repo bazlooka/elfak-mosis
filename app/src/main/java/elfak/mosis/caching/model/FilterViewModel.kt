@@ -16,8 +16,8 @@ class FilterViewModel : ViewModel() {
             arrayOf(CacheType.EASY, CacheType.MEDIUM, CacheType.HARD),
             "",
             "",
-            0,
-            Int.MAX_VALUE
+            null,
+            null
         )
     )
     val filter: LiveData<Filter> get() = _filter

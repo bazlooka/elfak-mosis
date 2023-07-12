@@ -5,7 +5,7 @@
     android:layout_height="wrap_content">
 
     <EditText
-        android:id="@+id/editTextText2"
+        android:id="@+id/etFilterDesc"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -17,7 +17,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView6" />
 
     <EditText
-        android:id="@+id/editTextText5"
+        android:id="@+id/etFilterAuthor"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -62,33 +62,33 @@
         app:layout_constraintTop_toBottomOf="@+id/textView3" />
 
     <CheckBox
-        android:id="@+id/checkBox"
+        android:id="@+id/cbFilterEasy"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="Laki"
-        app:layout_constraintEnd_toStartOf="@+id/checkBox2"
+        app:layout_constraintEnd_toStartOf="@+id/cbFilterMedium"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView5" />
 
     <CheckBox
-        android:id="@+id/checkBox2"
+        android:id="@+id/cbFilterMedium"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="Srednji"
-        app:layout_constraintEnd_toStartOf="@+id/checkBox3"
-        app:layout_constraintStart_toEndOf="@+id/checkBox"
-        app:layout_constraintTop_toTopOf="@+id/checkBox" />
+        app:layout_constraintEnd_toStartOf="@+id/cbFilterHard"
+        app:layout_constraintStart_toEndOf="@+id/cbFilterEasy"
+        app:layout_constraintTop_toTopOf="@+id/cbFilterEasy" />
 
     <CheckBox
-        android:id="@+id/checkBox3"
+        android:id="@+id/cbFilterHard"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="Teški"
-        app:layout_constraintStart_toEndOf="@+id/checkBox2"
-        app:layout_constraintTop_toTopOf="@+id/checkBox2" />
+        app:layout_constraintStart_toEndOf="@+id/cbFilterMedium"
+        app:layout_constraintTop_toTopOf="@+id/cbFilterMedium" />
 
     <TextView
         android:id="@+id/textView3"
@@ -107,6 +107,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="24dp"
         android:text="sve"
+        android:textColor="@color/purple_700"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
@@ -128,7 +129,7 @@
         android:layout_marginTop="16dp"
         android:text="Opis:"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/checkBox" />
+        app:layout_constraintTop_toBottomOf="@+id/cbFilterEasy" />
 
     <TextView
         android:id="@+id/textView7"
@@ -138,7 +139,7 @@
         android:layout_marginTop="16dp"
         android:text="Autor:"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextText2" />
+        app:layout_constraintTop_toBottomOf="@+id/etFilterDesc" />
 
     <TextView
         android:id="@+id/textView8"
@@ -148,22 +149,24 @@
         android:layout_marginTop="16dp"
         android:text="Datum objavljivanja:"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextText5" />
+        app:layout_constraintTop_toBottomOf="@+id/etFilterAuthor" />
 
     <TextView
-        android:id="@+id/textView9"
+        android:id="@+id/tvFilterDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="24dp"
-        android:text="16.05.2023 - 17.08.2027"
+        android:text="Bilo kada"
+        android:textColor="@color/purple_700"
+        android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/btnAppyFilter"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView8" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/btnFilterDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"

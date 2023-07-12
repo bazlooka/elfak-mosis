@@ -8,8 +8,8 @@ data class Filter(
     val selectedTypes: Array<CacheType>,
     val desc: String,
     val author: String,
-    val startTime: Int,
-    val endTime: Int
+    val startTime: Long?,
+    val endTime: Long?
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
