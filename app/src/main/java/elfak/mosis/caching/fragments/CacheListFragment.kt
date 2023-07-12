@@ -19,7 +19,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -32,14 +31,15 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import elfak.mosis.caching.MainActivity
 import elfak.mosis.caching.R
 import elfak.mosis.caching.adapters.CachesRecyclerAdapter
 import elfak.mosis.caching.data.Cache
 import elfak.mosis.caching.data.CacheWithId
+import elfak.mosis.caching.data.Filter
 import elfak.mosis.caching.databinding.FragmentCacheListBinding
-import elfak.mosis.caching.model.FilterViewModel
 import elfak.mosis.caching.services.FilterService
-import org.osmdroid.views.overlay.Marker
+import elfak.mosis.caching.services.FilterServiceCallback
 
 class CacheListFragment : Fragment() {
 
@@ -47,8 +47,6 @@ class CacheListFragment : Fragment() {
 
     private lateinit var locationManager: LocationManager
     private var geoQuery: GeoQuery? = null
-
-    private val filterViewModel: FilterViewModel by viewModels()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var recyclerAdapter: CachesRecyclerAdapter
@@ -92,6 +90,11 @@ class CacheListFragment : Fragment() {
 
                     R.id.action_show_leaderboard -> {
                         findNavController().navigate(R.id.action_cacheListFragment_to_leaderboardFragment)
+                        true
+                    }
+
+                    R.id.action_show_filter -> {
+                        showFilter()
                         true
                     }
 
@@ -139,7 +142,6 @@ class CacheListFragment : Fragment() {
         geoQuery?.center = GeoLocation(it.latitude, it.longitude)
     }
 
-    private var markers: HashMap<String, Marker> = HashMap()
     private var caches: HashMap<String, Cache> = HashMap()
 
     private val geoQueryEventListener: GeoQueryEventListener = object : GeoQueryEventListener {
@@ -151,7 +153,7 @@ class CacheListFragment : Fragment() {
                     val cache = it.toObject(Cache::class.java)
                     if (cache != null) {
                         caches[key] = cache
-                        val f = filterViewModel.filter.value
+                        val f = (activity as MainActivity).filterViewModel.filter.value
                         if (f != null && !FilterService.filterCache(f, cache)) {
                             return@addOnSuccessListener
                         }
@@ -170,7 +172,6 @@ class CacheListFragment : Fragment() {
         override fun onKeyExited(key: String?) {
             if (key != null) {
                 recyclerAdapter.remove(key)
-                markers.remove(key)
                 caches.remove(key)
             }
         }
@@ -189,5 +190,28 @@ class CacheListFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         geoQuery?.removeGeoQueryEventListener(geoQueryEventListener)
+    }
+
+    private fun showFilter() {
+        FilterService.showFilter(
+            (activity as MainActivity).filterViewModel,
+            this,
+            object : FilterServiceCallback {
+                @SuppressLint("MissingPermission")
+                override fun success(filter: Filter, radius: Double) {
+                    recyclerAdapter.deleteAll()
+                    caches.forEach {
+                        if (FilterService.filterCache(filter, it.value)) {
+                            val loc = Location("listLoc")
+                            loc.longitude = it.value.lng
+                            loc.latitude = it.value.lat
+                            val distance = locationManager
+                                .getLastKnownLocation(LocationManager.FUSED_PROVIDER)
+                                ?.distanceTo(loc)
+                            recyclerAdapter.add(CacheWithId(it.value, it.key, distance ?: 0.0f))
+                        }
+                    }
+                }
+            })
     }
 }

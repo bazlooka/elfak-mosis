@@ -97,6 +97,12 @@ class CachesRecyclerAdapter(
         notifyItemRemoved(i)
     }
 
+    fun deleteAll() {
+        val size = dataSet.size
+        dataSet.clear()
+        notifyItemRangeRemoved(0, size)
+    }
+
     private fun getDistanceString(distance: Float): String {
         return if (distance < 1000) {
             String.format("%d m", distance.roundToInt())
