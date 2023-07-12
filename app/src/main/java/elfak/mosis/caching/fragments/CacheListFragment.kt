@@ -189,7 +189,7 @@ class CacheListFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        geoQuery?.removeGeoQueryEventListener(geoQueryEventListener)
+        geoQuery?.removeAllListeners()
     }
 
     private fun showFilter() {

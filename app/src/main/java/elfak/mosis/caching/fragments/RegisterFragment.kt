@@ -100,6 +100,16 @@ class RegisterFragment : Fragment() {
             ).show()
             return
         }
+        binding.pbRegister.visibility = View.VISIBLE
+        binding.editTextText.visibility = View.GONE
+        binding.editTextTextPassword2.visibility = View.GONE
+        binding.editTextTextPassword3.visibility = View.GONE
+        binding.editTextText3.visibility = View.GONE
+        binding.editTextText4.visibility = View.GONE
+        binding.editTextPhone.visibility = View.GONE
+        binding.imageView2.visibility = View.GONE
+        binding.btnRegister.visibility = View.GONE
+
         register(NewUser(username, firstName, lastName, phoneNumber, imageUri, password1))
     }
 

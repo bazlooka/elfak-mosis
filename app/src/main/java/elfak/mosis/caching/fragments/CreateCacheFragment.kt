@@ -135,6 +135,14 @@ class CreateCacheFragment : Fragment() {
             currLocation.longitude
         )
 
+        binding.imageView3.visibility = View.GONE
+        binding.editTextTextMultiLine.visibility = View.GONE
+        binding.textView11.visibility = View.GONE
+        binding.textView12.visibility = View.GONE
+        binding.radioGroup.visibility = View.GONE
+        binding.button4.visibility = View.GONE
+        binding.pbCreateCache.visibility = View.VISIBLE
+
         val db = Firebase.firestore
         db.collection("caches")
             .add(cache)
