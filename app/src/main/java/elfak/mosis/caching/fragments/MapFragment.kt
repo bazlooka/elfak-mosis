@@ -77,7 +77,7 @@ class MapFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupMenu()
-        (requireActivity() as AppCompatActivity).supportActionBar?.title = "Mapa"
+        (requireActivity() as AppCompatActivity).supportActionBar?.title = getString(R.string.map)
 
         binding.fabCreateCache.setOnClickListener {
             findNavController().navigate(R.id.action_mapFragment_to_createCacheFragment)
@@ -235,7 +235,7 @@ class MapFragment : Fragment() {
             } else {
                 Toast.makeText(
                     requireContext(),
-                    "Permission request denied",
+                    getString(R.string.permissions_denied),
                     Toast.LENGTH_SHORT
                 ).show()
             }

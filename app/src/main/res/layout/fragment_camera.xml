@@ -18,7 +18,7 @@
         android:layout_marginBottom="24dp"
         android:elevation="2dp"
         app:tint="@null"
-        app:backgroundTint="@color/purple_500"
+        app:backgroundTint="@color/dark_blue"
         app:fabCustomSize="100dp"
         app:fabSize="auto"
         app:layout_constraintBottom_toTopOf="@+id/button3"

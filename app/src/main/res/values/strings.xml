@@ -1,7 +1,11 @@
 <resources>
     <string name="app_name">MosisCaching</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="show_leaderboard">Prikaži rangove</string>
     <string name="show_filter">Prikaži filtere</string>
     <string name="show_list">Prikaži listu</string>
+    <string name="easy">Lako</string>
+    <string name="medium">Srednje</string>
+    <string name="hard">Teško</string>
+    <string name="map">Mapa</string>
+    <string name="permissions_denied">Dozvole su odbijene</string>
 </resources>

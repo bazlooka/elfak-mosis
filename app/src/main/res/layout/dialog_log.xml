@@ -47,7 +47,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="Dodavanje unosa:"
-        android:textColor="@color/purple_700"
+        android:textColor="@color/darkest_blue"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
