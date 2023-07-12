@@ -1,5 +1,10 @@
 package elfak.mosis.caching.fragments
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -8,6 +13,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -27,6 +33,7 @@ class CacheListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupMenu()
         (requireActivity() as AppCompatActivity).supportActionBar?.title = "Lista keševa"
+        setupLocation()
     }
 
     private fun setupMenu() {
@@ -57,4 +64,31 @@ class CacheListFragment : Fragment() {
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
+
+    private fun setupLocation() {
+        val locationManager = requireActivity()
+            .getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        locationManager.requestLocationUpdates(
+            LocationManager.GPS_PROVIDER,
+            0L,
+            0f,
+            locationListener
+        )
+    }
+
+    private val locationListener: LocationListener = LocationListener {
+        //geoQuery?.center = GeoLocation(it.latitude, it.longitude)
+    }
+
 }

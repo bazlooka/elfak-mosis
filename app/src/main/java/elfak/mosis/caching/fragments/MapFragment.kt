@@ -15,6 +15,9 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.SeekBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +27,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
@@ -39,13 +43,17 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import elfak.mosis.caching.R
 import elfak.mosis.caching.data.CacheType
+import elfak.mosis.caching.data.Filter
 import elfak.mosis.caching.databinding.FragmentMapBinding
+import elfak.mosis.caching.model.FilterViewModel
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 
 class MapFragment : Fragment() {
@@ -58,6 +66,8 @@ class MapFragment : Fragment() {
     private lateinit var pinEasy: Drawable
     private lateinit var pinMedium: Drawable
     private lateinit var pinHard: Drawable
+
+    private val filterViewModel: FilterViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -267,7 +277,67 @@ class MapFragment : Fragment() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
         dialog.setCancelable(true)
+
+        val label = dialog.findViewById<TextView>(R.id.tvFilterRadius)
+
+        val sbRadius = dialog.findViewById<SeekBar>(R.id.sbRadius)
+        val progress = filterViewModel.filter.value?.radius ?: 100
+        sbRadius.progress = progress
+        label.text = getRadiusString(progress)
+        sbRadius.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            @SuppressLint("SetTextI18n")
+            override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
+                label.text = getRadiusString(progress)
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+
+        })
+
+        dialog.findViewById<Button>(R.id.btnAppyFilter)
+            .setOnClickListener {
+                val progress = sbRadius.progress
+                val dProgress = progress / 100.0
+                val radius =
+                    if (progress == 100)
+                        8587.0
+                    else
+                        dProgress.pow(5) * 8587.0
+                geoQuery?.radius = radius
+
+                val filter = Filter(
+                    progress,
+                    arrayOf(CacheType.EASY),
+                    "",
+                    "",
+                    0,
+                    0
+                )
+                filterViewModel.setFilter(filter)
+
+                dialog.dismiss()
+            }
         dialog.show()
+    }
+
+    private fun getRadiusString(progress: Int): String {
+        val dProgress = progress / 100.0
+        val radius = dProgress.pow(5) * 8587.0
+        return if (progress == 100) {
+            "sve"
+        } else {
+            if (radius < 1.0) {
+                String.format("%d m", (radius * 1000.0).roundToInt())
+            } else {
+                String.format("%.3f km", radius)
+            }
+        }
     }
 
     private fun showDatePicker() {

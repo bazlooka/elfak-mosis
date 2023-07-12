@@ -21,6 +21,7 @@ import com.firebase.geofire.GeoLocation
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
+import com.google.firebase.database.ktx.getValue
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
@@ -138,7 +139,7 @@ class CreateCacheFragment : Fragment() {
         val db = Firebase.firestore
         db.collection("caches")
             .add(cache)
-            .addOnSuccessListener {
+            .addOnSuccessListener { it ->
                 val cacheId = it.id
                 val imagePath = "cache/$cacheId.jpg"
                 val photoRef = Firebase.storage.reference.child(imagePath)
@@ -156,7 +157,15 @@ class CreateCacheFragment : Fragment() {
                                 "Keš uspešno sačuvan!",
                                 Toast.LENGTH_SHORT,
                             ).show()
-                            findNavController().popBackStack()
+                            val scoreRef = Firebase.database
+                                .getReference("users/${currUser.uid}/score")
+                            scoreRef.get().addOnSuccessListener { sDs ->
+                                val score = sDs.getValue<Int>()
+                                if (score != null) {
+                                    scoreRef.setValue(2 + score)
+                                    findNavController().popBackStack()
+                                }
+                            }
                         }
                     }
                 }
